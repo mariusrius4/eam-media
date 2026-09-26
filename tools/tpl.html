@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face{font-family:'Poppins';src:url('/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf');font-weight:700;}
+  @font-face{font-family:'Poppins';src:url('/usr/share/fonts/truetype/google-fonts/Poppins-Medium.ttf');font-weight:500;}
+  @font-face{font-family:'Poppins';src:url('/usr/share/fonts/truetype/google-fonts/Poppins-Regular.ttf');font-weight:400;}
+  @font-face{font-family:'Poppins';src:url('/usr/share/fonts/truetype/google-fonts/Poppins-Light.ttf');font-weight:300;}
+
+  :root{--bg:#000;--cyan:#22C3CE;--blue:#2F6FD6;--ink:#fff;--ink2:#B9C1C7;--muted:#6E777E;--track:#1C2126;--grey:#3A434A;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#000;}
+  body{font-family:'Poppins',sans-serif;color:var(--ink);}
+  #stage{position:absolute;inset:0;width:1080px;height:1920px;background:var(--bg);overflow:hidden;}
+  #prog{position:absolute;top:0;left:0;height:7px;background:var(--cyan);width:0;z-index:40;}
+
+  .scene{position:absolute;inset:0;padding:190px 90px 470px;display:none;flex-direction:column;}
+  .scene.on{display:flex;}
+  .kicker{font-size:34px;font-weight:500;letter-spacing:.18em;color:var(--cyan);text-transform:uppercase;line-height:1.35;}
+  .huge{font-size:250px;font-weight:700;line-height:.9;letter-spacing:-.025em;font-variant-numeric:tabular-nums;}
+  .lede{font-size:70px;font-weight:700;line-height:1.16;letter-spacing:-.01em;}
+  .ledeM{font-size:58px;font-weight:500;line-height:1.26;}
+  .sub{font-size:41px;font-weight:300;line-height:1.38;color:var(--ink2);}
+  .sp{flex:1;}
+  .rule{height:5px;background:var(--cyan);border-radius:3px;margin:40px 0;width:170px;transform:scaleX(0);transform-origin:left;}
+  .mark{position:absolute;left:90px;bottom:330px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;}
+  .mark img{width:480px;height:auto;display:block;}
+  .mark .motto{font-size:19px;font-weight:300;letter-spacing:.235em;color:#5EA9B2;white-space:nowrap;padding-left:3px;}
+  .src{position:absolute;left:90px;bottom:270px;font-size:26px;font-weight:400;color:var(--muted);}
+  .w{display:block;opacity:0;}
+
+  .row{margin-bottom:46px;}
+  .rowTop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;}
+  .rowName{font-size:34px;font-weight:500;}
+  .rowVal{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .track{position:relative;height:32px;border-radius:5px;background:var(--track);width:900px;}
+  .fill{position:absolute;left:0;top:0;height:32px;width:900px;border-radius:5px;background:var(--cyan);transform-origin:left;transform:scaleX(0);}
+  .thr{position:absolute;top:-16px;width:3px;height:0;background:repeating-linear-gradient(to bottom,var(--grey) 0 9px,transparent 9px 18px);}
+  .thrL{position:absolute;transform:translateX(-50%);font-size:27px;color:var(--muted);opacity:0;white-space:nowrap;}
+
+  .cols{position:relative;height:430px;width:900px;}
+  .colWrap{position:absolute;bottom:55px;width:270px;}
+  .col{width:270px;border-radius:5px;transform:scaleY(0);transform-origin:bottom;}
+  .colNum{position:absolute;top:-74px;width:270px;text-align:center;font-size:50px;font-weight:700;opacity:0;}
+  .colLbl{position:absolute;width:420px;left:-75px;text-align:center;font-size:28px;top:100%;margin-top:22px;white-space:nowrap;}
+  .base{position:absolute;bottom:55px;left:0;height:3px;background:#2A3137;width:0;}
+</style>
+</head>
+<body>
+<div id="stage"><div id="prog"></div></div>
+
+<script src="day.js"></script>
+<script>
+const LOGO = '<div class="mark"><img src="logo-orizontal.png" alt=""><div class="motto">&ndash; TRANZITIA SIGURA LA ELECTRIC &ndash;</div></div>';
+const esc = s => s;
+const stage = document.getElementById('stage');
+
+// ---------- construieste DOM-ul din datele zilei ----------
+DAY.scenes.forEach((s, i) => {
+  const d = document.createElement('div');
+  d.className = 'scene'; d.id = 'sc' + i;
+  let h = '';
+
+  if (s.type === 'text') {
+    h += s.kicker ? `<div class="kicker w" data-a>${s.kicker}</div>` : '';
+    h += '<div class="sp"></div><div class="lede" style="font-size:' + (s.size || 78) + 'px">';
+    s.lines.forEach(l => h += `<span class="w" data-a${l.cyan ? ' style="color:var(--cyan)"' : ''}>${l.t || l}</span>`);
+    h += '</div><div class="rule" data-a></div>';
+    h += s.sub ? `<div class="sub w" data-a>${s.sub}</div>` : '';
+    h += '<div class="sp"></div>';
+  }
+
+  if (s.type === 'big') {
+    h += `<div class="kicker w" data-a>${s.kicker}</div><div class="sp"></div>`;
+    h += `<div class="huge" id="num${i}" style="${s.style || ''}">0</div>`;
+    h += '<div class="rule" data-a></div><div class="ledeM">';
+    s.lede.forEach(l => h += `<span class="w" data-a>${l}</span>`);
+    h += '</div>';
+    h += s.sub ? `<div class="sub w" data-a style="margin-top:46px">${s.sub}</div>` : '';
+    h += '<div class="sp"></div>';
+  }
+
+  if (s.type === 'bars') {
+    h += `<div class="kicker w" data-a>${s.kicker}</div><div class="sp" style="max-height:70px"></div>`;
+    h += '<div style="position:relative">';
+    s.bars.forEach(b => {
+      const c = b.dim ? 'var(--ink2)' : '#fff', fw = b.dim ? 400 : 500;
+      h += `<div class="row"><div class="rowTop"><span class="rowName" style="color:${c};font-weight:${fw}">${b.name}</span>`;
+      h += `<span class="rowVal" style="color:${c}" data-v="${b.val}" data-dec="${b.dec === undefined ? 2 : b.dec}" data-suf="${b.suf === undefined ? '%' : b.suf}">0</span></div>`;
+      h += `<div class="track"><div class="fill" data-p="${b.pct}" style="background:${b.dim ? 'var(--grey)' : 'var(--cyan)'}"></div></div></div>`;
+    });
+    if (s.threshold) {
+      h += `<div class="thr" style="left:${Math.round(s.threshold * 900)}px"></div>`;
+      h += `<div class="thrL" style="left:${Math.round(s.threshold * 900)}px">${s.thresholdLabel}</div>`;
+    }
+    h += '</div>';
+    h += s.sub ? `<div class="sub w" data-a style="margin-top:34px">${s.sub}</div>` : '';
+    h += '<div class="sp"></div>';
+  }
+
+  if (s.type === 'duo') {
+    h += `<div class="kicker w" data-a>${s.kicker}</div><div class="sp"></div>`;
+    h += '<div class="lede" style="margin-bottom:64px">';
+    s.lede.forEach(l => h += `<span class="w" data-a>${l}</span>`);
+    h += '</div><div class="cols"><div class="base"></div>';
+    s.cols.forEach((c, k) => {
+      const col = c.color === 'grey' ? 'var(--grey)' : (c.color === 'blue' ? 'var(--blue)' : 'var(--cyan)');
+      const tc = c.color === 'grey' ? 'var(--ink2)' : '#fff';
+      const lc = c.color === 'grey' ? 'var(--muted)' : 'var(--ink2)';
+      h += `<div class="colWrap" style="left:${k === 0 ? 60 : 570}px">`;
+      h += `<div class="colNum" style="color:${tc};font-size:${c.numSize||50}px">${c.value}</div>`;
+      h += `<div class="col" style="height:${c.h}px;background:${col}"></div>`;
+      h += `<div class="colLbl" style="color:${lc};font-weight:${c.color === 'grey' ? 400 : 500}">${c.label}</div></div>`;
+    });
+    h += '</div>';
+    h += s.sub ? `<div class="sub w" data-a style="margin-top:72px">${s.sub}</div>` : '';
+    h += '<div class="sp"></div>';
+  }
+
+  if (s.type === 'close') {
+    h += '<div class="sp"></div><div class="lede" style="font-size:' + (s.size || 82) + 'px">';
+    s.lines.forEach(l => h += `<span class="w" data-a${l.cyan ? ' style="color:var(--cyan)"' : ''}>${l.t || l}</span>`);
+    h += '</div><div class="rule" data-a></div>';
+    h += `<div class="sub w" data-a style="font-size:47px">${s.sub}</div><div class="sp"></div>`;
+    h += '<div class="endMark" style="display:flex;flex-direction:column;align-items:flex-start;gap:18px;opacity:0">';
+    h += '<img src="logo-orizontal.png" alt="" style="width:760px;height:auto;display:block">';
+    h += '<div class="endMotto" style="font-size:28px;font-weight:300;color:#5EA9B2;padding-left:5px">&ndash; TRANZITIA SIGURA LA ELECTRIC &ndash;</div></div>';
+  }
+
+  if (s.type !== 'close') {
+    h += LOGO;
+    h += s.src ? `<div class="src w" data-a>Sursă: ${s.src}</div>` : '';
+  }
+  d.innerHTML = h;
+  stage.appendChild(d);
+});
+
+// ---------- timing ----------
+let t0 = 0;
+DAY.scenes.forEach(s => { s._t0 = t0; t0 += s.dur; s._t1 = t0; });
+const T_END = t0;
+window.T_END = T_END;
+
+const clamp = p => Math.max(0, Math.min(1, p));
+const P = (t, a, d) => clamp((t - a) / d);
+const eOut = p => 1 - Math.pow(1 - p, 3);
+const eInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const ro = (v, dec) => v.toFixed(dec).replace('.', ',');
+
+function rise(el, t, at, dur) {
+  if (!el) return;
+  const p = eOut(P(t, at, dur || 0.36));
+  el.style.opacity = p;
+  el.style.transform = 'translateY(' + ((1 - p) * 42) + 'px)';
+}
+
+function render(t) {
+  document.getElementById('prog').style.width = (clamp(t / T_END) * 1080) + 'px';
+
+  let ci = 0;
+  DAY.scenes.forEach((s, i) => { if (t >= s._t0) ci = i; });
+  DAY.scenes.forEach((s, i) => document.getElementById('sc' + i).classList.toggle('on', i === ci));
+
+  // Prima scena e complet formata din primul cadru. Miniatura pe care o alege
+  // platforma nu are voie sa fie un ecran negru cu logo — textul trebuie citit
+  // din grila, inainte de play. Animatia de intrare incepe de la scena a doua.
+  const s = DAY.scenes[ci], el = document.getElementById('sc' + ci);
+  const lt = (ci === 0) ? 99 : (t - s._t0);
+  el.style.opacity = 1; el.style.transform = 'none';
+  const A = el.querySelectorAll('[data-a]');
+  let k = 0;
+
+  if (s.type === 'text' || s.type === 'close') {
+    if (s.type === 'text' && s.kicker) rise(A[k++], lt, 0.10);
+    s.lines.forEach((_, j) => rise(A[k++], lt, 0.22 + j * 0.26));
+    if (A[k]) A[k++].style.transform = 'scaleX(' + eOut(P(lt, 0.30 + s.lines.length * 0.26, 0.40)) + ')';
+    rise(A[k++], lt, 0.55 + s.lines.length * 0.26);
+    if (s.type === 'close') {
+      const p = eOut(P(lt, 1.15 + s.lines.length * 0.2, 0.70));
+      el.querySelector('.endMark').style.opacity = p;
+      el.querySelector('.endMotto').style.letterSpacing = (0.50 - 0.265 * p) + 'em';
+    }
+  }
+
+  if (s.type === 'big') {
+    rise(A[k++], lt, 0.10);
+    const n = el.querySelector('.huge');
+    const v = eOut(P(lt, 0.28, 1.30)) * s.value;
+    let txt = ro(v, s.dec === undefined ? 1 : s.dec);
+    if (s.thousands) txt = Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    n.textContent = txt + (s.suf === undefined ? '%' : s.suf);
+    n.style.opacity = eOut(P(lt, 0.16, 0.28));
+    A[k++].style.transform = 'scaleX(' + eOut(P(lt, 1.55, 0.40)) + ')';
+    s.lede.forEach((_, j) => rise(A[k++], lt, 1.72 + j * 0.18));
+    if (s.sub) rise(A[k++], lt, 2.30);
+  }
+
+  if (s.type === 'bars') {
+    rise(A[k++], lt, 0.10);
+    const thr = el.querySelector('.thr');
+    const rows = el.querySelectorAll('.row');
+    if (thr) {
+      const last = rows[rows.length - 1];
+      thr.style.height = (eInOut(P(lt, 0.32, 0.55)) * (last.offsetTop + last.offsetHeight + 4)) + 'px';
+      const L = el.querySelector('.thrL');
+      L.style.top = (last.offsetTop + last.offsetHeight + 16) + 'px';
+      L.style.opacity = eOut(P(lt, 0.30 + s.bars.length * 0.18, 0.40));
+    }
+    el.querySelectorAll('.fill').forEach((f, j) => {
+      const p = eOut(P(lt, 0.50 + j * 0.18, 0.80));
+      f.style.transform = 'scaleX(' + (p * parseFloat(f.dataset.p)) + ')';
+      const v = el.querySelectorAll('.rowVal')[j];
+      v.textContent = ro(p * parseFloat(v.dataset.v), parseInt(v.dataset.dec)) + v.dataset.suf;
+    });
+    if (s.sub) rise(A[k++], lt, 0.75 + s.bars.length * 0.18);
+  }
+
+  if (s.type === 'duo') {
+    rise(A[k++], lt, 0.10);
+    s.lede.forEach((_, j) => rise(A[k++], lt, 0.28 + j * 0.20));
+    el.querySelector('.base').style.width = (eInOut(P(lt, 0.52, 0.50)) * 900) + 'px';
+    el.querySelectorAll('.col').forEach((c, j) => c.style.transform = 'scaleY(' + eOut(P(lt, 0.82 + j * 0.18, 0.75)) + ')');
+    el.querySelectorAll('.colNum').forEach((n, j) => n.style.opacity = eOut(P(lt, 1.50 + j * 0.14, 0.35)));
+    if (s.sub) rise(A[k++], lt, 1.95);
+  }
+
+  const srcEl = el.querySelector('.src');
+  if (srcEl) srcEl.style.opacity = eOut(P(lt, Math.max(2.2, s.dur - 2.0), 0.45));
+}
+window.render = render;
+window.ready = document.fonts.ready.then(() => { render(0); return true; });
+</script>
+</body>
+</html>
