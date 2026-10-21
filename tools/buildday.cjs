@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 
 // Playwright: intai instalarea locala, apoi cea globala.
 let chromium;
@@ -19,6 +19,9 @@ const src = process.argv[2];          // ex. zi23.js
 
 // Patul muzical e compus de noi, prin sinteza (bed.py). Nu vine din nicio
 // biblioteca, deci nu are amprenta Content ID si nimeni nu-l poate revendica.
+// `mood` poate fi cheia scurta (bateria / incarcare / range / costuri / cumperi / piata / dealer)
+// sau direct numele pilonului din Notion („Range real", „Transparenta dealer"...) — bed.py le traduce.
+// Seed-ul vine din numele clipului, deci doua clipuri din acelasi pilon nu suna identic.
 const MOOD_FALLBACK = 'bateria';
 
 (async () => {
@@ -58,8 +61,8 @@ const MOOD_FALLBACK = 'bateria';
 
   // 1. patul muzical, generat pe taieturile acestui clip
   const bed = `${DIR}/bed_${name}.wav`;
-  execSync(`python3 ${DIR}/bed.py --cuts ${cuts.join(',')} --end ${T_TOTAL} --mood ${mood} --out ${bed}`,
-           { stdio: 'pipe' });
+  execFileSync('python3', [`${DIR}/bed.py`, '--cuts', cuts.join(','), '--end', String(T_TOTAL),
+                           '--mood', String(mood), '--name', String(name), '--out', bed], { stdio: 'pipe' });
 
   // 2. imagine + pat muzical, masterizat la -16 LUFS (nivelul pe care il asteapta platformele)
   const fadeAt = Math.max(0, T_TOTAL - 1.9);
